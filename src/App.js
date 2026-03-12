@@ -23,7 +23,7 @@ function App() {
     <div style={styles.container}>
       <h1 style={styles.title}>Student Dashboard</h1>
       <p style={styles.subtitle}>
-        Welcome to the frontend container deployed through Continuous Deployment.
+        Welcome to Version 2 of the Student Dashboard deployed automatically from GitHub.
       </p>
     </div>
   );
