@@ -1,0 +1,1709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RiceGuard AI — BLB Detection System</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Syne:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════
+   DESIGN SYSTEM — dark scientific editorial
+═══════════════════════════════════════════════ */
+:root {
+  --bg:       #0d110e;
+  --surface:  #131a14;
+  --card:     #192019;
+  --border:   rgba(120,200,120,0.12);
+  --border2:  rgba(120,200,120,0.22);
+  --green:    #5dde7a;
+  --green2:   #2ea84a;
+  --green-dim:#1c5e2c;
+  --amber:    #f0b429;
+  --red:      #e05252;
+  --text:     #e8f0e8;
+  --muted:    rgba(232,240,232,0.45);
+  --mono:     'JetBrains Mono', monospace;
+  --display:  'Playfair Display', serif;
+  --body:     'Syne', sans-serif;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--body);
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* grain overlay */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:0;opacity:0.6;
+}
+
+/* ── NAVBAR ── */
+.navbar{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 2.5rem;height:64px;
+  background:rgba(13,17,14,0.85);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+}
+.logo{
+  display:flex;align-items:center;gap:10px;
+  font-family:var(--display);font-size:18px;color:var(--text);
+  text-decoration:none;letter-spacing:0.02em;
+}
+.logo-icon{
+  width:32px;height:32px;border-radius:8px;
+  background:var(--green2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;flex-shrink:0;
+}
+.nav-links{display:flex;align-items:center;gap:0.2rem;}
+.nav-links a{
+  font-size:13px;font-weight:500;color:var(--muted);
+  text-decoration:none;padding:6px 14px;border-radius:8px;
+  transition:color 0.2s,background 0.2s;
+}
+.nav-links a:hover,.nav-links a.active{color:var(--text);background:rgba(93,222,122,0.08);}
+.nav-cta{
+  font-size:13px;font-weight:600;color:var(--bg);
+  background:var(--green);padding:7px 18px;border-radius:8px;
+  text-decoration:none;transition:opacity 0.2s,transform 0.15s;
+}
+.nav-cta:hover{opacity:0.88;transform:translateY(-1px);}
+
+/* ── PAGE SECTIONS ── */
+section{position:relative;z-index:1;}
+
+/* ── HERO ── */
+.hero{
+  min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:100px 2rem 4rem;
+  text-align:center;
+  overflow:hidden;
+}
+/* radial glow */
+.hero::before{
+  content:'';
+  position:absolute;top:20%;left:50%;transform:translateX(-50%);
+  width:700px;height:500px;
+  background:radial-gradient(ellipse,rgba(46,168,74,0.13) 0%,transparent 70%);
+  pointer-events:none;
+}
+.hero-eyebrow{
+  font-family:var(--mono);font-size:11px;font-weight:500;
+  letter-spacing:0.18em;text-transform:uppercase;color:var(--green);
+  margin-bottom:1.6rem;
+  display:inline-flex;align-items:center;gap:8px;
+  opacity:0;animation:fadeUp 0.6s ease 0.1s forwards;
+}
+.hero-eyebrow::before,.hero-eyebrow::after{
+  content:'';display:inline-block;width:24px;height:1px;background:var(--green);opacity:0.5;
+}
+.hero h1{
+  font-family:var(--display);
+  font-size:clamp(3rem,7vw,6rem);
+  font-weight:900;line-height:1.05;
+  color:var(--text);margin-bottom:1.4rem;
+  opacity:0;animation:fadeUp 0.7s ease 0.2s forwards;
+}
+.hero h1 em{font-style:italic;color:var(--green);}
+.hero-sub{
+  font-size:clamp(14px,2vw,17px);font-weight:400;
+  color:var(--muted);line-height:1.75;
+  max-width:540px;margin:0 auto 2.4rem;
+  opacity:0;animation:fadeUp 0.7s ease 0.35s forwards;
+}
+.hero-actions{
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center;
+  opacity:0;animation:fadeUp 0.7s ease 0.45s forwards;
+}
+.btn-primary{
+  padding:13px 28px;background:var(--green);color:var(--bg);
+  font-family:var(--body);font-size:15px;font-weight:700;
+  border:none;border-radius:10px;cursor:pointer;
+  text-decoration:none;display:inline-flex;align-items:center;gap:8px;
+  transition:transform 0.15s,box-shadow 0.2s;
+  box-shadow:0 0 0 0 rgba(93,222,122,0.4);
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 0 0 8px rgba(93,222,122,0.12);}
+.btn-ghost{
+  padding:13px 24px;background:transparent;color:var(--text);
+  font-family:var(--body);font-size:15px;font-weight:500;
+  border:1px solid var(--border2);border-radius:10px;cursor:pointer;
+  text-decoration:none;display:inline-flex;align-items:center;gap:8px;
+  transition:border-color 0.2s,background 0.2s;
+}
+.btn-ghost:hover{border-color:var(--green);background:rgba(93,222,122,0.05);}
+
+/* floating stats */
+.hero-stats{
+  display:flex;gap:1px;margin-top:4rem;
+  background:var(--border);border-radius:14px;overflow:hidden;
+  opacity:0;animation:fadeUp 0.7s ease 0.55s forwards;
+}
+.hstat{
+  background:var(--surface);padding:20px 32px;
+  display:flex;flex-direction:column;gap:4px;flex:1;min-width:120px;
+}
+.hstat-n{font-family:var(--display);font-size:28px;color:var(--green);}
+.hstat-l{font-family:var(--mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);}
+
+/* scrolling ticker */
+.ticker{
+  margin-top:2rem;overflow:hidden;
+  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+  padding:10px 0;
+  opacity:0;animation:fadeUp 0.5s ease 0.65s forwards;
+}
+.ticker-inner{
+  display:flex;gap:2.5rem;
+  animation:ticker 22s linear infinite;
+  white-space:nowrap;
+}
+.ticker-item{
+  font-family:var(--mono);font-size:11px;color:var(--muted);
+  letter-spacing:0.06em;
+  display:flex;align-items:center;gap:8px;
+}
+.ticker-dot{width:4px;height:4px;border-radius:50%;background:var(--green);flex-shrink:0;}
+@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* ── HOW IT WORKS ── */
+.section-pad{padding:6rem 2rem;}
+.section-inner{max-width:1100px;margin:0 auto;}
+.section-label{
+  font-family:var(--mono);font-size:11px;letter-spacing:0.14em;
+  text-transform:uppercase;color:var(--green);margin-bottom:1rem;
+}
+.section-title{
+  font-family:var(--display);font-size:clamp(1.8rem,3.5vw,2.8rem);
+  font-weight:700;color:var(--text);line-height:1.2;margin-bottom:1rem;
+}
+.section-sub{font-size:15px;color:var(--muted);line-height:1.7;max-width:560px;}
+
+.steps-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:1px;background:var(--border);border-radius:16px;overflow:hidden;
+  margin-top:3rem;
+}
+.step-card{
+  background:var(--surface);padding:2rem;
+  position:relative;transition:background 0.2s;
+}
+.step-card:hover{background:var(--card);}
+.step-num{
+  font-family:var(--mono);font-size:11px;color:var(--green);
+  letter-spacing:0.1em;margin-bottom:1rem;
+  display:flex;align-items:center;gap:8px;
+}
+.step-num::after{content:'';flex:1;height:1px;background:var(--border2);}
+.step-icon{font-size:28px;margin-bottom:1rem;}
+.step-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:0.5rem;}
+.step-desc{font-size:13px;color:var(--muted);line-height:1.7;}
+
+/* ── PREDICTOR ── */
+#predictor{background:var(--surface);}
+.predictor-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:2rem;
+  align-items:start;margin-top:3rem;
+}
+
+/* Input Panel */
+.input-panel{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:16px;overflow:hidden;
+}
+.panel-header{
+  padding:16px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.panel-label{
+  font-family:var(--mono);font-size:11px;letter-spacing:0.1em;
+  text-transform:uppercase;color:var(--green);
+}
+.panel-body{padding:20px;}
+
+/* form fields */
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.field{display:flex;flex-direction:column;gap:6px;}
+.field.full{grid-column:1/-1;}
+.field label{
+  font-family:var(--mono);font-size:10px;font-weight:500;
+  letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);
+}
+.field input,.field select{
+  width:100%;padding:9px 12px;
+  background:var(--bg);border:1px solid var(--border);
+  border-radius:8px;color:var(--text);
+  font-family:var(--mono);font-size:13px;
+  outline:none;transition:border-color 0.2s,box-shadow 0.2s;
+  appearance:none;
+}
+.field input:focus,.field select:focus{
+  border-color:var(--green);
+  box-shadow:0 0 0 3px rgba(93,222,122,0.1);
+}
+.field input::placeholder{color:rgba(232,240,232,0.2);}
+.hint{font-size:10px;color:rgba(232,240,232,0.25);font-family:var(--mono);}
+
+/* slider */
+.slider-wrap{position:relative;padding-top:24px;}
+.slider-val{
+  position:absolute;top:0;right:0;
+  font-family:var(--mono);font-size:12px;font-weight:500;color:var(--green);
+}
+input[type=range]{
+  -webkit-appearance:none;width:100%;height:3px;
+  border-radius:2px;background:var(--border2);
+  outline:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:16px;height:16px;
+  border-radius:50%;background:var(--green);
+  border:2px solid var(--bg);
+  box-shadow:0 0 0 0 rgba(93,222,122,0.3);
+  transition:box-shadow 0.2s,transform 0.15s;
+}
+input[type=range]::-webkit-slider-thumb:hover{
+  box-shadow:0 0 0 6px rgba(93,222,122,0.15);
+  transform:scale(1.1);
+}
+
+/* upload */
+.upload-zone{
+  border:1px dashed rgba(93,222,122,0.25);border-radius:10px;
+  padding:20px;text-align:center;cursor:pointer;
+  transition:border-color 0.2s,background 0.2s;
+  position:relative;overflow:hidden;background:rgba(93,222,122,0.03);
+  margin-bottom:14px;
+}
+.upload-zone:hover{border-color:var(--green);background:rgba(93,222,122,0.06);}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.upload-zone p{font-size:12px;color:var(--muted);}
+.upload-zone strong{color:var(--green);}
+#img-preview{width:100%;max-height:120px;object-fit:cover;border-radius:6px;margin-top:8px;display:none;}
+
+/* model toggles */
+.model-toggles{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.model-toggle{
+  font-family:var(--mono);font-size:11px;font-weight:500;
+  padding:5px 12px;border-radius:6px;cursor:pointer;
+  border:1px solid var(--border2);color:var(--muted);
+  background:transparent;transition:all 0.15s;
+  letter-spacing:0.05em;
+}
+.model-toggle.on{background:var(--green-dim);border-color:var(--green);color:var(--green);}
+
+/* run btn */
+.run-btn{
+  width:100%;padding:12px;margin-top:4px;
+  background:var(--green);color:var(--bg);
+  font-family:var(--body);font-size:15px;font-weight:700;
+  border:none;border-radius:10px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:opacity 0.2s,transform 0.15s;
+  letter-spacing:0.02em;
+}
+.run-btn:hover{opacity:0.88;transform:translateY(-1px);}
+.run-btn:active{transform:translateY(0);}
+.spin{
+  width:15px;height:15px;border:2px solid rgba(13,17,14,0.3);
+  border-top-color:var(--bg);border-radius:50%;
+  animation:spin 0.7s linear infinite;display:none;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── OUTPUT PANEL ── */
+.output-panel{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:16px;overflow:hidden;position:sticky;top:80px;
+}
+.output-placeholder{
+  padding:3rem 2rem;text-align:center;color:var(--muted);
+}
+.placeholder-icon{font-size:44px;margin-bottom:1rem;filter:grayscale(1)opacity(0.3);}
+.placeholder-text{font-size:13px;line-height:1.8;}
+
+#result-area{display:none;}
+
+/* verdict */
+.verdict-row{
+  padding:20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:12px;
+}
+.verdict-pill{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:6px 14px;border-radius:99px;font-size:13px;font-weight:600;
+  font-family:var(--mono);letter-spacing:0.04em;
+}
+.verdict-pill.infected{background:rgba(224,82,82,0.15);color:var(--red);border:1px solid rgba(224,82,82,0.25);}
+.verdict-pill.healthy{background:rgba(93,222,122,0.12);color:var(--green);border:1px solid rgba(93,222,122,0.25);}
+.v-dot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:vdot 1.5s infinite;}
+@keyframes vdot{0%,100%{opacity:1}50%{opacity:0.3}}
+.verdict-time{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--muted);}
+
+/* confidence */
+.conf-section{padding:16px 20px;border-bottom:1px solid var(--border);}
+.conf-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.conf-label{font-family:var(--mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);}
+.conf-pct{font-family:var(--mono);font-size:13px;font-weight:500;}
+.conf-track{height:6px;background:var(--border2);border-radius:3px;overflow:hidden;}
+.conf-fill{height:100%;border-radius:3px;width:0;transition:width 1.2s cubic-bezier(.4,0,.2,1);}
+
+/* model breakdown */
+.breakdown{padding:16px 20px;border-bottom:1px solid var(--border);}
+.breakdown-title{font-family:var(--mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;}
+.model-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 0;border-bottom:1px solid rgba(120,200,120,0.06);
+  font-size:13px;
+}
+.model-row:last-child{border-bottom:none;}
+.model-name{display:flex;align-items:center;gap:8px;color:var(--text);font-weight:500;}
+.model-dot{width:6px;height:6px;border-radius:50%;}
+.model-pct{font-family:var(--mono);font-size:12px;}
+.model-verdict{
+  font-family:var(--mono);font-size:10px;font-weight:600;
+  padding:3px 8px;border-radius:99px;letter-spacing:0.04em;
+}
+.mv-infected{background:rgba(224,82,82,0.15);color:var(--red);}
+.mv-healthy{background:rgba(93,222,122,0.12);color:var(--green);}
+
+/* feature chips */
+.chips-section{padding:16px 20px;border-bottom:1px solid var(--border);}
+.chips-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.chip{
+  font-family:var(--mono);font-size:11px;
+  padding:4px 10px;border-radius:6px;
+  background:var(--surface);border:1px solid var(--border);
+}
+.ck{color:var(--muted);}
+.cv{color:var(--text);font-weight:500;}
+
+/* importance bars */
+.importance{padding:16px 20px;border-bottom:1px solid var(--border);}
+.imp-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:12px;}
+.imp-label{color:var(--muted);min-width:110px;font-family:var(--mono);font-size:10px;}
+.imp-track{flex:1;height:4px;background:var(--border2);border-radius:2px;}
+.imp-fill{height:100%;border-radius:2px;transition:width 1s ease 0.3s;}
+.imp-val{font-family:var(--mono);font-size:11px;color:var(--muted);min-width:36px;text-align:right;}
+
+/* recommendation */
+.rec-section{padding:16px 20px;}
+.rec-box{
+  background:rgba(240,180,41,0.07);
+  border:1px solid rgba(240,180,41,0.18);
+  border-radius:10px;padding:14px 16px;
+  font-size:13px;line-height:1.7;color:rgba(232,240,232,0.75);
+}
+.rec-box strong{color:var(--amber);}
+
+/* loading */
+#loading-state{display:none;padding:3rem;text-align:center;}
+.loading-ring{
+  width:48px;height:48px;margin:0 auto 1rem;
+  border:3px solid var(--border2);border-top-color:var(--green);
+  border-radius:50%;animation:spin 0.9s linear infinite;
+}
+.loading-text{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:0.06em;}
+
+/* ── MODEL CARDS ── */
+.models-section{background:var(--bg);}
+.model-cards{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:1px;background:var(--border);border-radius:16px;overflow:hidden;
+  margin-top:2.5rem;
+}
+.model-card{
+  background:var(--surface);padding:1.8rem;
+  transition:background 0.2s;position:relative;
+}
+.model-card:hover{background:var(--card);}
+.model-card.best::before{
+  content:'BEST';
+  position:absolute;top:16px;right:16px;
+  font-family:var(--mono);font-size:9px;letter-spacing:0.12em;
+  color:var(--green);background:rgba(93,222,122,0.12);
+  border:1px solid rgba(93,222,122,0.25);padding:3px 8px;border-radius:99px;
+}
+.mc-name{
+  font-family:var(--display);font-size:20px;font-weight:700;
+  color:var(--text);margin-bottom:0.4rem;
+}
+.mc-desc{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:1.4rem;}
+.mc-metrics{display:flex;flex-direction:column;gap:8px;}
+.mc-metric{display:flex;justify-content:space-between;align-items:center;}
+.mc-key{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.06em;}
+.mc-bar-wrap{display:flex;align-items:center;gap:8px;flex:1;margin-left:12px;}
+.mc-bar-bg{flex:1;height:3px;background:var(--border2);border-radius:2px;}
+.mc-bar{height:100%;border-radius:2px;}
+.mc-val{font-family:var(--mono);font-size:11px;font-weight:500;min-width:36px;text-align:right;}
+
+/* ── ABOUT ── */
+.about-section{background:var(--surface);}
+.about-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:3rem;
+  align-items:center;margin-top:2rem;
+}
+.about-text p{font-size:14px;color:var(--muted);line-height:1.8;margin-bottom:1rem;}
+.about-text strong{color:var(--text);}
+.about-meta{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:14px;padding:1.8rem;
+}
+.meta-row{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:12px 0;border-bottom:1px solid var(--border);
+}
+.meta-row:last-child{border-bottom:none;}
+.meta-key{font-family:var(--mono);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);min-width:90px;padding-top:2px;}
+.meta-val{font-size:13px;color:var(--text);line-height:1.6;}
+
+/* ── FOOTER ── */
+footer{
+  position:relative;z-index:1;
+  border-top:1px solid var(--border);
+  padding:1.5rem 2rem;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:12px;
+}
+.footer-logo{font-family:var(--display);font-size:16px;color:var(--text);}
+.footer-copy{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:0.04em;}
+
+/* ── KEYFRAMES ── */
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(20px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* ── AUTH MODAL OVERLAY ── */
+.auth-overlay{
+  position:fixed;inset:0;z-index:1000;
+  background:rgba(7,11,8,0.92);
+  backdrop-filter:blur(20px);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;
+  transition:opacity 0.3s ease;
+}
+.auth-overlay.open{opacity:1;pointer-events:all;}
+
+.auth-card{
+  background:var(--surface);
+  border:1px solid var(--border2);
+  border-radius:20px;
+  width:100%;max-width:440px;
+  padding:0;
+  overflow:hidden;
+  transform:translateY(24px) scale(0.97);
+  transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow:0 40px 80px rgba(0,0,0,0.5),0 0 0 1px rgba(93,222,122,0.06);
+}
+.auth-overlay.open .auth-card{transform:translateY(0) scale(1);}
+
+.auth-header{
+  padding:28px 32px 20px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.auth-header-left{display:flex;flex-direction:column;gap:4px;}
+.auth-logo-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.auth-logo-icon{
+  width:28px;height:28px;border-radius:7px;background:var(--green2);
+  display:flex;align-items:center;justify-content:center;font-size:13px;
+}
+.auth-logo-name{font-family:var(--display);font-size:14px;color:var(--text);}
+.auth-title{font-family:var(--display);font-size:22px;font-weight:700;color:var(--text);}
+.auth-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.auth-close{
+  width:32px;height:32px;border-radius:8px;border:1px solid var(--border);
+  background:transparent;color:var(--muted);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;transition:all 0.15s;flex-shrink:0;
+}
+.auth-close:hover{background:rgba(224,82,82,0.1);border-color:rgba(224,82,82,0.3);color:var(--red);}
+
+/* tab switcher */
+.auth-tabs{
+  display:flex;padding:0 32px;border-bottom:1px solid var(--border);
+  gap:0;
+}
+.auth-tab{
+  font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:0.08em;
+  text-transform:uppercase;color:var(--muted);
+  padding:12px 16px;border:none;background:transparent;
+  cursor:pointer;border-bottom:2px solid transparent;
+  transition:color 0.2s,border-color 0.2s;margin-bottom:-1px;
+}
+.auth-tab.active{color:var(--green);border-bottom-color:var(--green);}
+
+/* form body */
+.auth-body{padding:24px 32px 28px;}
+.auth-panel{display:none;}
+.auth-panel.active{display:block;}
+
+.auth-field{display:flex;flex-direction:column;gap:7px;margin-bottom:16px;}
+.auth-field label{
+  font-family:var(--mono);font-size:10px;letter-spacing:0.1em;
+  text-transform:uppercase;color:var(--muted);
+}
+.auth-input-wrap{position:relative;}
+.auth-icon{
+  position:absolute;left:12px;top:50%;transform:translateY(-50%);
+  font-size:14px;opacity:0.4;pointer-events:none;
+}
+.auth-field input{
+  width:100%;padding:10px 12px 10px 38px;
+  background:var(--bg);border:1px solid var(--border);
+  border-radius:9px;color:var(--text);
+  font-family:var(--mono);font-size:13px;
+  outline:none;transition:border-color 0.2s,box-shadow 0.2s;
+}
+.auth-field input:focus{
+  border-color:var(--green);
+  box-shadow:0 0 0 3px rgba(93,222,122,0.1);
+}
+.auth-field input::placeholder{color:rgba(232,240,232,0.2);}
+
+.auth-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.auth-check{display:flex;align-items:center;gap:7px;cursor:pointer;}
+.auth-check input[type=checkbox]{
+  width:14px;height:14px;accent-color:var(--green);cursor:pointer;
+}
+.auth-check span{font-size:12px;color:var(--muted);}
+.auth-forgot{font-size:12px;color:var(--green);text-decoration:none;opacity:0.8;transition:opacity 0.15s;}
+.auth-forgot:hover{opacity:1;}
+
+.auth-btn{
+  width:100%;padding:12px;
+  background:var(--green);color:var(--bg);
+  font-family:var(--body);font-size:14px;font-weight:700;
+  border:none;border-radius:10px;cursor:pointer;
+  letter-spacing:0.03em;
+  transition:opacity 0.2s,transform 0.15s,box-shadow 0.2s;
+  box-shadow:0 0 0 0 rgba(93,222,122,0.3);
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.auth-btn:hover{opacity:0.9;transform:translateY(-1px);box-shadow:0 0 0 8px rgba(93,222,122,0.1);}
+.auth-btn:active{transform:translateY(0);}
+
+.auth-divider{
+  display:flex;align-items:center;gap:12px;margin:20px 0;
+}
+.auth-divider::before,.auth-divider::after{
+  content:'';flex:1;height:1px;background:var(--border);
+}
+.auth-divider span{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.06em;}
+
+.auth-social{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;
+}
+.social-btn{
+  padding:9px 14px;border:1px solid var(--border);border-radius:9px;
+  background:transparent;color:var(--muted);
+  font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:0.04em;
+  cursor:pointer;transition:all 0.15s;
+  display:flex;align-items:center;justify-content:center;gap:7px;
+}
+.social-btn:hover{border-color:var(--border2);color:var(--text);background:rgba(93,222,122,0.04);}
+
+.auth-error{
+  background:rgba(224,82,82,0.1);border:1px solid rgba(224,82,82,0.2);
+  border-radius:8px;padding:10px 14px;
+  font-size:12px;color:var(--red);margin-bottom:14px;
+  display:none;font-family:var(--mono);
+}
+.auth-error.show{display:block;}
+
+.auth-success{
+  background:rgba(93,222,122,0.08);border:1px solid rgba(93,222,122,0.2);
+  border-radius:8px;padding:10px 14px;
+  font-size:12px;color:var(--green);margin-bottom:14px;
+  display:none;font-family:var(--mono);
+}
+.auth-success.show{display:block;}
+
+/* ── USER MENU (logged in state) ── */
+.user-menu-wrap{position:relative;}
+.user-avatar-btn{
+  display:flex;align-items:center;gap:8px;
+  background:rgba(93,222,122,0.08);border:1px solid var(--border2);
+  border-radius:10px;padding:5px 12px 5px 6px;
+  cursor:pointer;transition:all 0.15s;
+}
+.user-avatar-btn:hover{background:rgba(93,222,122,0.14);border-color:var(--green);}
+.user-avatar{
+  width:28px;height:28px;border-radius:7px;
+  background:linear-gradient(135deg,var(--green2),var(--green-dim));
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:var(--bg);
+  font-family:var(--mono);letter-spacing:0;
+}
+.user-name-display{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--text);}
+.user-chevron{font-size:10px;color:var(--muted);transition:transform 0.2s;}
+.user-menu-wrap.open .user-chevron{transform:rotate(180deg);}
+
+.user-dropdown{
+  position:absolute;top:calc(100% + 8px);right:0;
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:12px;padding:6px;min-width:200px;
+  box-shadow:0 20px 40px rgba(0,0,0,0.4);
+  opacity:0;pointer-events:none;transform:translateY(-6px);
+  transition:all 0.2s ease;z-index:200;
+}
+.user-menu-wrap.open .user-dropdown{opacity:1;pointer-events:all;transform:translateY(0);}
+
+.dd-header{
+  padding:10px 12px 8px;border-bottom:1px solid var(--border);margin-bottom:4px;
+}
+.dd-email{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.04em;}
+.dd-role{
+  font-family:var(--mono);font-size:9px;letter-spacing:0.08em;text-transform:uppercase;
+  color:var(--green);margin-top:3px;
+}
+.dd-item{
+  display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:7px;
+  font-size:12px;color:var(--muted);cursor:pointer;transition:all 0.15s;
+  border:none;background:none;width:100%;text-align:left;
+}
+.dd-item:hover{background:rgba(93,222,122,0.07);color:var(--text);}
+.dd-item.danger:hover{background:rgba(224,82,82,0.08);color:var(--red);}
+.dd-sep{height:1px;background:var(--border);margin:4px 0;}
+
+/* ── PROTECTED OVERLAY ── */
+.protected-notice{
+  position:relative;
+  background:rgba(13,17,14,0.7);
+  border:1px dashed rgba(93,222,122,0.2);
+  border-radius:12px;
+  padding:3rem 2rem;
+  text-align:center;
+  overflow:hidden;
+}
+.protected-notice::before{
+  content:'';position:absolute;inset:0;
+  background:rgba(13,17,14,0.6);
+  backdrop-filter:blur(4px);
+  z-index:1;
+}
+.protected-content{position:relative;z-index:2;}
+.lock-icon{font-size:36px;margin-bottom:1rem;}
+.protected-notice h3{
+  font-family:var(--display);font-size:20px;color:var(--text);margin-bottom:0.5rem;
+}
+.protected-notice p{font-size:13px;color:var(--muted);margin-bottom:1.5rem;}
+.protected-btn{
+  padding:10px 24px;background:var(--green);color:var(--bg);
+  font-family:var(--body);font-size:13px;font-weight:700;
+  border:none;border-radius:9px;cursor:pointer;
+  transition:opacity 0.2s,transform 0.15s;display:inline-block;
+}
+.protected-btn:hover{opacity:0.88;transform:translateY(-1px);}
+
+/* toast */
+.toast{
+  position:fixed;bottom:24px;right:24px;z-index:2000;
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:12px;padding:14px 18px;
+  display:flex;align-items:center;gap:10px;
+  font-size:13px;color:var(--text);
+  box-shadow:0 16px 40px rgba(0,0,0,0.4);
+  transform:translateY(80px);opacity:0;
+  transition:all 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  pointer-events:none;max-width:320px;
+}
+.toast.show{transform:translateY(0);opacity:1;pointer-events:all;}
+.toast-icon{font-size:18px;flex-shrink:0;}
+.toast-msg{font-family:var(--mono);font-size:11px;letter-spacing:0.04em;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .predictor-grid{grid-template-columns:1fr;}
+  .output-panel{position:static;}
+  .about-grid{grid-template-columns:1fr;}
+  .model-cards{grid-template-columns:1fr;}
+  .hero-stats{flex-direction:column;gap:1px;}
+  .nav-links{display:none;}
+}
+@media(max-width:600px){
+  .navbar{padding:0 1rem;}
+  .hero{padding:90px 1rem 3rem;}
+  .section-pad{padding:4rem 1rem;}
+  .hero-stats{flex-direction:row;flex-wrap:wrap;}
+  .hstat{min-width:100px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ── NAVBAR ── -->
+<nav class="navbar">
+  <a href="#" class="logo">
+    <div class="logo-icon">🌾</div>
+    RiceGuard <span style="opacity:0.5;font-weight:400;font-style:italic"> AI</span>
+  </a>
+  <div class="nav-links">
+    <a href="#" class="active">Home</a>
+    <a href="#how">How It Works</a>
+    <a href="#predictor">Predictor</a>
+    <a href="#models">Models</a>
+    <a href="#about">About</a>
+  </div>
+  <!-- Auth state: logged out (default) -->
+  <div id="nav-auth-out">
+    <a href="#" class="nav-cta" onclick="openAuth();return false;">Sign In →</a>
+  </div>
+  <!-- Auth state: logged in (hidden by default) -->
+  <div id="nav-auth-in" style="display:none;">
+    <div class="user-menu-wrap" id="user-menu-wrap">
+      <button class="user-avatar-btn" onclick="toggleUserMenu()">
+        <div class="user-avatar" id="nav-avatar">?</div>
+        <span class="user-name-display" id="nav-username">User</span>
+        <span class="user-chevron">▾</span>
+      </button>
+      <div class="user-dropdown" id="user-dropdown">
+        <div class="dd-header">
+          <div class="dd-email" id="dd-email">user@example.com</div>
+          <div class="dd-role">Researcher · Field Agent</div>
+        </div>
+        <button class="dd-item" onclick="closeMenuGo('#predictor')">⬡ Run Detection</button>
+        <button class="dd-item" onclick="closeMenuGo('#models')">📊 Model Results</button>
+        <button class="dd-item" onclick="closeMenuGo('#about')">📄 About Study</button>
+        <div class="dd-sep"></div>
+        <button class="dd-item danger" onclick="doLogout()">↩ Sign Out</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ── AUTH MODAL ── -->
+<div class="auth-overlay" id="auth-overlay" onclick="overlayClick(event)">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="auth-header-left">
+        <div class="auth-logo-row">
+          <div class="auth-logo-icon">🌾</div>
+          <span class="auth-logo-name">RiceGuard AI</span>
+        </div>
+        <div class="auth-title" id="auth-modal-title">Welcome back</div>
+        <div class="auth-sub" id="auth-modal-sub">Sign in to your research account</div>
+      </div>
+      <button class="auth-close" onclick="closeAuth()">✕</button>
+    </div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">Sign In</button>
+      <button class="auth-tab" id="tab-register" onclick="switchTab('register')">Register</button>
+    </div>
+
+    <div class="auth-body">
+
+      <!-- LOGIN PANEL -->
+      <div class="auth-panel active" id="panel-login">
+        <div class="auth-error" id="login-error">Invalid email or password. Please try again.</div>
+        <div class="auth-success" id="login-success">Signed in successfully!</div>
+        <div class="auth-field">
+          <label>Email address</label>
+          <div class="auth-input-wrap">
+            <span class="auth-icon">✉</span>
+            <input type="email" id="login-email" placeholder="researcher@university.edu" autocomplete="email">
+          </div>
+        </div>
+        <div class="auth-field">
+          <label>Password</label>
+          <div class="auth-input-wrap">
+            <span class="auth-icon">🔒</span>
+            <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+          </div>
+        </div>
+        <div class="auth-row">
+          <label class="auth-check">
+            <input type="checkbox" id="remember-me" checked>
+            <span>Remember me</span>
+          </label>
+          <a href="#" class="auth-forgot">Forgot password?</a>
+        </div>
+        <button class="auth-btn" onclick="doLogin()">
+          <span>Sign In</span><span>→</span>
+        </button>
+        <div class="auth-divider"><span>OR CONTINUE WITH</span></div>
+        <div class="auth-social">
+          <button class="social-btn" onclick="socialLogin('Google')">🌐 Google</button>
+          <button class="social-btn" onclick="socialLogin('ORCID')">🔬 ORCID</button>
+        </div>
+      </div>
+
+      <!-- REGISTER PANEL -->
+      <div class="auth-panel" id="panel-register">
+        <div class="auth-error" id="reg-error">Please fill in all fields correctly.</div>
+        <div class="auth-success" id="reg-success">Account created! You are now signed in.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="auth-field">
+            <label>First Name</label>
+            <div class="auth-input-wrap">
+              <span class="auth-icon">👤</span>
+              <input type="text" id="reg-fname" placeholder="Seetha">
+            </div>
+          </div>
+          <div class="auth-field">
+            <label>Last Name</label>
+            <div class="auth-input-wrap">
+              <span class="auth-icon">👤</span>
+              <input type="text" id="reg-lname" placeholder="Rama">
+            </div>
+          </div>
+        </div>
+        <div class="auth-field">
+          <label>Email address</label>
+          <div class="auth-input-wrap">
+            <span class="auth-icon">✉</span>
+            <input type="email" id="reg-email" placeholder="you@institution.edu">
+          </div>
+        </div>
+        <div class="auth-field">
+          <label>Institution</label>
+          <div class="auth-input-wrap">
+            <span class="auth-icon">🏛</span>
+            <input type="text" id="reg-inst" placeholder="Annamalai University">
+          </div>
+        </div>
+        <div class="auth-field">
+          <label>Password</label>
+          <div class="auth-input-wrap">
+            <span class="auth-icon">🔒</span>
+            <input type="password" id="reg-pass" placeholder="Min. 8 characters" onkeydown="if(event.key==='Enter')doRegister()">
+          </div>
+        </div>
+        <button class="auth-btn" onclick="doRegister()">
+          <span>Create Account</span><span>→</span>
+        </button>
+        <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:14px;font-family:var(--mono);">
+          By registering you agree to our Terms of Use and Privacy Policy.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span class="toast-icon" id="toast-icon">✅</span>
+  <span class="toast-msg" id="toast-msg">Signed in successfully!</span>
+</div>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <span class="hero-eyebrow">ICISC 2024 · Annamalai University · IEEE</span>
+  <h1>Detect <em>Bacterial<br>Leaf Blight</em><br>in Paddy Fields</h1>
+  <p class="hero-sub">
+    Machine learning-powered detection of BLB using SVM, KNN &amp; Gradient Boosting — trained on 2,300 high-resolution paddy leaf images from real field conditions.
+  </p>
+  <div class="hero-actions">
+    <a href="#predictor" class="btn-primary" onclick="heroDetect(event)">
+      <span>⬡</span> Start Detection
+    </a>
+    <a href="#models" class="btn-ghost">
+      <span>↓</span> View Model Results
+    </a>
+  </div>
+
+  <div class="hero-stats">
+    <div class="hstat">
+      <span class="hstat-n">2,300</span>
+      <span class="hstat-l">Training images</span>
+    </div>
+    <div class="hstat">
+      <span class="hstat-n">52.8%</span>
+      <span class="hstat-l">Best accuracy · KNN</span>
+    </div>
+    <div class="hstat">
+      <span class="hstat-n">100%</span>
+      <span class="hstat-l">Best recall · SVM</span>
+    </div>
+    <div class="hstat">
+      <span class="hstat-n">3</span>
+      <span class="hstat-l">ML algorithms</span>
+    </div>
+  </div>
+
+  <div class="ticker" style="width:100%;max-width:900px;margin-top:2rem;">
+    <div class="ticker-inner" id="ticker-inner">
+      <!-- duplicated for seamless loop -->
+    </div>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ── -->
+<section id="how" class="section-pad">
+  <div class="section-inner">
+    <p class="section-label">Methodology</p>
+    <h2 class="section-title">From leaf image<br>to diagnosis</h2>
+    <p class="section-sub">The detection pipeline extracts color, texture, and shape features from high-resolution rice leaf photographs, then runs them through trained ML classifiers.</p>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <div class="step-icon">📷</div>
+        <div class="step-title">Image Capture</div>
+        <div class="step-desc">High-resolution paddy leaf images captured in various lighting conditions and growth stages — both healthy and infected leaves.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <div class="step-icon">⚙️</div>
+        <div class="step-title">Preprocessing</div>
+        <div class="step-desc">Images are resized and normalised to [0, 1] pixel range. RGB channels are extracted for color feature computation.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <div class="step-icon">🔬</div>
+        <div class="step-title">Feature Extraction</div>
+        <div class="step-desc">Color histograms, GLCM texture metrics (contrast, correlation, energy), Local Binary Patterns, and Canny edge shapes are computed.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">04</div>
+        <div class="step-icon">🤖</div>
+        <div class="step-title">ML Classification</div>
+        <div class="step-desc">SVM with RBF kernel, 100-tree Random Forest, KNN, and GradientBoostingClassifier are each evaluated on the feature set.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">05</div>
+        <div class="step-icon">📊</div>
+        <div class="step-title">Evaluation</div>
+        <div class="step-desc">Each model is scored on accuracy, precision, recall, and F1-score to determine the most reliable BLB detection algorithm.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">06</div>
+        <div class="step-icon">🌾</div>
+        <div class="step-title">Field Action</div>
+        <div class="step-desc">Diagnosis results guide disease management — targeted treatment, resistant variety selection, drainage optimisation, and monitoring.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── PREDICTOR ── -->
+<section id="predictor" class="section-pad">
+  <div class="section-inner">
+    <p class="section-label">Live Prediction Tool</p>
+    <h2 class="section-title">Run BLB Detection</h2>
+    <p class="section-sub">Enter leaf feature values extracted from your paddy field image to get an instant BLB prediction from all three models.</p>
+
+    <div id="predictor-locked" class="protected-notice" style="display:none;margin-top:3rem;">
+      <div class="protected-content">
+        <div class="lock-icon">🔒</div>
+        <h3>Sign In to Run Detection</h3>
+        <p>The BLB prediction tool is available to registered researchers.<br>Create a free account to access the full detection system.</p>
+        <button class="protected-btn" onclick="openAuth()">Sign In / Register →</button>
+      </div>
+    </div>
+
+    <div id="predictor-content">
+    <div class="predictor-grid">
+
+      <!-- INPUT -->
+      <div class="input-panel">
+        <div class="panel-header">
+          <span class="panel-label">Leaf Feature Input</span>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">5 features</span>
+        </div>
+        <div class="panel-body">
+
+          <!-- upload -->
+          <div class="upload-zone" id="upload-zone">
+            <input type="file" accept="image/*" onchange="previewImg(this)">
+            <p>📎 Drop leaf image or <strong>click to upload</strong></p>
+            <img id="img-preview" src="" alt="">
+          </div>
+
+          <!-- feature sliders -->
+          <div class="field-row">
+            <div class="field">
+              <label>Green Pixel %</label>
+              <div class="slider-wrap">
+                <span class="slider-val" id="v-green">65%</span>
+                <input type="range" min="0" max="100" value="65" id="s-green"
+                  oninput="document.getElementById('v-green').textContent=this.value+'%'">
+              </div>
+              <span class="hint">Healthy green area ratio</span>
+            </div>
+            <div class="field">
+              <label>Other Color %</label>
+              <div class="slider-wrap">
+                <span class="slider-val" id="v-other">35%</span>
+                <input type="range" min="0" max="100" value="35" id="s-other"
+                  oninput="document.getElementById('v-other').textContent=this.value+'%'">
+              </div>
+              <span class="hint">Yellow / brown / white pixels</span>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label>Plant Age (days)</label>
+              <input type="number" id="f-age" value="55" min="1" max="200" placeholder="55">
+              <span class="hint">Days since transplant</span>
+            </div>
+            <div class="field">
+              <label>Image Height (px)</label>
+              <input type="number" id="f-height" value="640" min="100" max="4000" placeholder="640">
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label>Image Width (px)</label>
+              <input type="number" id="f-width" value="480" min="100" max="4000" placeholder="480">
+            </div>
+            <div class="field">
+              <label>Growth Stage</label>
+              <select id="f-stage">
+                <option value="tillering">Tillering (21–45d)</option>
+                <option value="booting" selected>Booting (45–70d)</option>
+                <option value="heading">Heading (70–90d)</option>
+                <option value="ripening">Ripening (90–130d)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- model toggles -->
+          <div style="margin-bottom:6px;">
+            <span style="font-family:var(--mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);">Active Models</span>
+          </div>
+          <div class="model-toggles">
+            <button class="model-toggle on" data-m="knn" onclick="toggleModel(this)">KNN</button>
+            <button class="model-toggle on" data-m="gbm" onclick="toggleModel(this)">Gradient Boost</button>
+            <button class="model-toggle on" data-m="svm" onclick="toggleModel(this)">SVM</button>
+          </div>
+
+          <button class="run-btn" onclick="runPrediction()">
+            <div class="spin" id="spin"></div>
+            <span id="btn-label">⬡ &nbsp;Analyse Leaf Features</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- OUTPUT -->
+      <div class="output-panel">
+        <div class="panel-header">
+          <span class="panel-label">Prediction Output</span>
+          <span id="out-time" style="font-family:var(--mono);font-size:10px;color:var(--muted);"></span>
+        </div>
+
+        <div class="output-placeholder" id="out-placeholder">
+          <div class="placeholder-icon">🌾</div>
+          <p class="placeholder-text">Configure the leaf features on the left<br>and click <strong style="color:var(--green)">Analyse</strong> to see model predictions.</p>
+        </div>
+
+        <div id="loading-state">
+          <div class="loading-ring"></div>
+          <p class="loading-text">RUNNING MODELS…</p>
+        </div>
+
+        <div id="result-area">
+          <!-- verdict -->
+          <div class="verdict-row">
+            <div class="verdict-pill infected" id="verdict-pill">
+              <span class="v-dot"></span>
+              <span id="verdict-text">BLB Detected</span>
+            </div>
+            <span class="verdict-time" id="verdict-time"></span>
+          </div>
+
+          <!-- confidence -->
+          <div class="conf-section">
+            <div class="conf-header">
+              <span class="conf-label">Ensemble Confidence</span>
+              <span class="conf-pct" id="conf-pct" style="color:var(--green)">—</span>
+            </div>
+            <div class="conf-track">
+              <div class="conf-fill" id="conf-fill" style="background:var(--green)"></div>
+            </div>
+          </div>
+
+          <!-- breakdown -->
+          <div class="breakdown">
+            <div class="breakdown-title">Model Breakdown</div>
+            <div class="model-row">
+              <span class="model-name"><span class="model-dot" style="background:#5dde7a"></span>KNN</span>
+              <span style="display:flex;align-items:center;gap:8px;">
+                <span class="model-pct" id="knn-pct" style="color:var(--muted)">—</span>
+                <span class="model-verdict" id="knn-v">—</span>
+              </span>
+            </div>
+            <div class="model-row">
+              <span class="model-name"><span class="model-dot" style="background:#f0b429"></span>Gradient Boost</span>
+              <span style="display:flex;align-items:center;gap:8px;">
+                <span class="model-pct" id="gbm-pct" style="color:var(--muted)">—</span>
+                <span class="model-verdict" id="gbm-v">—</span>
+              </span>
+            </div>
+            <div class="model-row">
+              <span class="model-name"><span class="model-dot" style="background:#e05252"></span>SVM</span>
+              <span style="display:flex;align-items:center;gap:8px;">
+                <span class="model-pct" id="svm-pct" style="color:var(--muted)">—</span>
+                <span class="model-verdict" id="svm-v">—</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- feature importance -->
+          <div class="importance">
+            <div class="breakdown-title">Feature Importance (GBM)</div>
+            <div class="imp-row">
+              <span class="imp-label">green_pct</span>
+              <div class="imp-track"><div class="imp-fill" id="imp-green" style="background:var(--green);width:0%"></div></div>
+              <span class="imp-val">41.4%</span>
+            </div>
+            <div class="imp-row">
+              <span class="imp-label">other_pct</span>
+              <div class="imp-track"><div class="imp-fill" id="imp-other" style="background:var(--amber);width:0%"></div></div>
+              <span class="imp-val">37.9%</span>
+            </div>
+            <div class="imp-row">
+              <span class="imp-label">age</span>
+              <div class="imp-track"><div class="imp-fill" id="imp-age" style="background:#888;width:0%"></div></div>
+              <span class="imp-val">20.7%</span>
+            </div>
+            <div class="imp-row">
+              <span class="imp-label">height/width</span>
+              <div class="imp-track"><div class="imp-fill" style="background:#444;width:1%"></div></div>
+              <span class="imp-val">~0%</span>
+            </div>
+          </div>
+
+          <!-- chips -->
+          <div class="chips-section">
+            <div class="breakdown-title">Input Summary</div>
+            <div class="chips-wrap" id="chips-wrap"></div>
+          </div>
+
+          <!-- recommendation -->
+          <div class="rec-section">
+            <div class="rec-box" id="rec-box"></div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /predictor-grid -->
+    </div><!-- /predictor-content -->
+  </div>
+</section>
+<section id="models" class="section-pad models-section">
+  <div class="section-inner">
+    <p class="section-label">Research Results</p>
+    <h2 class="section-title">Algorithm Comparison</h2>
+    <p class="section-sub">Performance metrics from the paper's comparative study on the 2,300-image paddy leaf dataset.</p>
+    <div class="model-cards">
+      <div class="model-card best">
+        <div class="mc-name">KNN</div>
+        <div class="mc-desc">k-Nearest Neighbours — simple majority vote from nearest data points. Most balanced overall performance.</div>
+        <div class="mc-metrics">
+          <div class="mc-metric">
+            <span class="mc-key">Accuracy</span>
+            <div class="mc-bar-wrap">
+              <div class="mc-bar-bg"><div class="mc-bar" style="width:53%;background:var(--green)"></div></div>
+              <span class="mc-val" style="color:var(--green)">52.8%</span>
+            </div>
+          </div>
+          <div class="mc-metric">
+            <span class="mc-key">Precision</span>
+            <div class="mc-bar-wrap">
+              <div class="mc-bar-bg"><div class="mc-bar" style="width:52%;background:var(--green)"></div></div>
+              <span class="mc-val">52.4%</span>
+            </div>
+          </div>
+          <div class="mc-metric">
+            <span class="mc-key">Recall</span>
+            <div class="mc-bar-wrap">
+              <div class="mc-bar-bg"><div class="mc-bar" style="width:57%;background:var(--green)"></div></div>
+              <span class="mc-val">57.2%</span>
+            </div>
+          </div>
+          <div class="mc-metric">
+            <span class="mc-key">F1-Score</span>
+            <div class="mc-bar-wrap">
+              <div class="mc-bar-bg"><div class="mc-bar" style="width:55%;background:var(--green)"></div></div>
+              <span class="mc-val">54.7%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="model-card">
+        <div class="mc-name">Gradient Boost</div>
+        <div class="mc-desc">Iterative ensemble of decision trees. Captures complex patterns, good recall, reliable F1-score.</div>
+        <div class="mc-metrics">
+          <div class="mc-metric">
+            <span class="mc-key">Accuracy</span>
+            <div class="mc-bar-wrap">
+              <div class="mc-bar-bg"><div class="mc-bar" style="width:50%;background:var(--amber)"></div></div>
+              <span class="mc-val">50.2%</span>
+            </div>
+          </div>
+          <div class="mc-metric">
+            <span class="mc-key">Precision</span>
+            <div class="mc-bar-wrap">
+              <div class="mc-bar-bg"><div class="mc-bar" style="width:50%;background:var(--amber)"></div></div>
+              <span class="mc-val">50.0%</span>
+            </div>
+          </div>
+          <div class="mc-metric">
+            <span class="mc-key">Recall</span>
+            <div class="mc-bar-wrap">
+              <div class="mc-bar-bg"><div class="mc-bar" style="width:58%;background:var(--amber)"></div></div>
+              <span class="mc-val">58.1%</span>
+            </div>
+          </div>
+          <div class="mc-metric">
+            <span class="mc-key">F1-Score</span>
+            <div class="mc-bar-wrap">
+              <div class="mc-bar-bg"><div class="mc-bar" style="width:54%;background:var(--amber)"></div></div>
+              <span class="mc-val">53.7%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="model-card">
+        <div class="mc-name">SVM</div>
+        <div class="mc-desc">Support Vector Machine with RBF kernel. Perfect recall — never misses an infected case, but generates false positives.</div>
+        <div class="mc-metrics">
+          <div class="mc-metric">
+            <span class="mc-key">Accuracy</span>
+            <div class="mc-bar-wrap">
+              <div class="mc-bar-bg"><div class="mc-bar" style="width:50%;background:var(--red)"></div></div>
+              <span class="mc-val">49.8%</span>
+            </div>
+          </div>
+          <div class="mc-metric">
+            <span class="mc-key">Precision</span>
+            <div class="mc-bar-wrap">
+              <div class="mc-bar-bg"><div class="mc-bar" style="width:50%;background:var(--red)"></div></div>
+              <span class="mc-val">49.8%</span>
+            </div>
+          </div>
+          <div class="mc-metric">
+            <span class="mc-key">Recall</span>
+            <div class="mc-bar-wrap">
+              <div class="mc-bar-bg"><div class="mc-bar" style="width:100%;background:var(--green)"></div></div>
+              <span class="mc-val" style="color:var(--green)">100%</span>
+            </div>
+          </div>
+          <div class="mc-metric">
+            <span class="mc-key">F1-Score</span>
+            <div class="mc-bar-wrap">
+              <div class="mc-bar-bg"><div class="mc-bar" style="width:66%;background:var(--red)"></div></div>
+              <span class="mc-val">66.5%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── ABOUT ── -->
+<section id="about" class="section-pad about-section">
+  <div class="section-inner">
+    <p class="section-label">About This Research</p>
+    <h2 class="section-title">Bacterial Leaf Blight<br>& Global Food Security</h2>
+    <div class="about-grid">
+      <div class="about-text">
+        <p>
+          <strong>Bacterial Leaf Blight (BLB)</strong>, caused by <em>Xanthomonas oryzae pv. oryzae</em>, is one of the most destructive diseases affecting rice crops worldwide. It causes significant yield losses and threatens global food security, particularly in South and Southeast Asia.
+        </p>
+        <p>
+          Traditional detection methods — manual inspection by agronomists — are <strong>labour-intensive, inconsistent, and prone to error</strong>. Early detection is critical: BLB spreads rapidly under humid conditions and can devastate an entire field within weeks if left untreated.
+        </p>
+        <p>
+          This research demonstrates that <strong>machine learning models trained on image features</strong> — particularly color percentages and plant age — can reliably detect BLB, opening a path toward automated, real-time field monitoring integrated with IoT devices and mobile applications.
+        </p>
+        <p>
+          The study was published at the <strong>2024 IEEE International Conference on Inventive Systems and Control (ICISC)</strong>, conducted at Annamalai University, Chidambaram, Tamil Nadu.
+        </p>
+      </div>
+      <div class="about-meta">
+        <div class="meta-row">
+          <span class="meta-key">Authors</span>
+          <span class="meta-val">Penugonda Seetha Rama Krishna<br><span style="color:var(--muted);font-size:12px;">Dr S Nagarajan (Supervisor)</span></span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-key">Institution</span>
+          <span class="meta-val">Dept. of CSE, Annamalai University, Chidambaram, Tamil Nadu</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-key">Conference</span>
+          <span class="meta-val">ICISC 2024 — 8th IEEE Intl. Conf. on Inventive Systems &amp; Control</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-key">DOI</span>
+          <span class="meta-val" style="font-family:var(--mono);font-size:11px;">10.1109/ICISC62624.2024.00072</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-key">Dataset</span>
+          <span class="meta-val">2,300 paddy leaf images · BLB-labelled · multi-condition</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-key">Tools</span>
+          <span class="meta-val">Python · Scikit-learn · TensorFlow/Keras · Matplotlib</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <span class="footer-logo">RiceGuard AI</span>
+  <span class="footer-copy">Based on ICISC 2024 research · Annamalai University · © 2024 IEEE</span>
+</footer>
+
+<script>
+/* ── TICKER ── */
+const tickerItems = [
+  'BLB caused by Xanthomonas oryzae pv. oryzae',
+  'green_percentage: 41.4% feature importance',
+  'KNN achieves 52.8% accuracy',
+  'SVM recall: 100% — zero missed infections',
+  '2,300 training images across field conditions',
+  'GLCM texture · Local Binary Patterns · Canny edge',
+  'GBM F1-score: 53.7%',
+  'VGG16 & ResNet for deep feature extraction',
+  'Color features dominate BLB detection signal',
+];
+const ti = document.getElementById('ticker-inner');
+const full = [...tickerItems,...tickerItems];
+ti.innerHTML = full.map(t=>`<span class="ticker-item"><span class="ticker-dot"></span>${t}</span>`).join('');
+
+/* ── MODEL TOGGLES ── */
+const activeModels = {knn:true,gbm:true,svm:true};
+function toggleModel(btn){
+  const m = btn.dataset.m;
+  activeModels[m] = !activeModels[m];
+  btn.classList.toggle('on', activeModels[m]);
+}
+
+/* ── IMAGE PREVIEW ── */
+function previewImg(input){
+  const img = document.getElementById('img-preview');
+  if(input.files && input.files[0]){
+    const r = new FileReader();
+    r.onload = e => { img.src = e.target.result; img.style.display='block'; };
+    r.readAsDataURL(input.files[0]);
+  }
+}
+
+/* ── PREDICTION ENGINE ── */
+function runPrediction(){
+  const green  = parseFloat(document.getElementById('s-green').value);
+  const other  = parseFloat(document.getElementById('s-other').value);
+  const age    = parseFloat(document.getElementById('f-age').value)    || 55;
+  const height = parseFloat(document.getElementById('f-height').value) || 640;
+  const width  = parseFloat(document.getElementById('f-width').value)  || 480;
+  const stage  = document.getElementById('f-stage').value;
+
+  // hide placeholder, show loader
+  document.getElementById('out-placeholder').style.display='none';
+  document.getElementById('result-area').style.display='none';
+  document.getElementById('loading-state').style.display='block';
+  document.getElementById('spin').style.display='block';
+  document.getElementById('btn-label').textContent='Analysing…';
+
+  setTimeout(()=>{
+    document.getElementById('loading-state').style.display='none';
+    document.getElementById('spin').style.display='none';
+    document.getElementById('btn-label').textContent='⬡  Analyse Leaf Features';
+    document.getElementById('result-area').style.display='block';
+    document.getElementById('out-time').textContent = new Date().toLocaleTimeString();
+
+    // ── Simulate predictions using paper's feature weights ──
+    // green 41.39%, other 37.92%, age 20.68% (height/width ≈ 0)
+    const stageBoost = {tillering:5,booting:0,heading:-3,ripening:-6}[stage]||0;
+    const riskScore = (100-green)*0.4139 + other*0.3792 + Math.min(age/120,1)*100*0.2068 + stageBoost;
+
+    // Per-model thresholds based on paper characteristics
+    const knnInf = riskScore > 36;
+    const gbmInf = riskScore > 32;
+    const svmInf = riskScore > 20; // very sensitive — recall=1.0
+
+    const knnConf = Math.min(0.93, 0.40 + riskScore/120);
+    const gbmConf = Math.min(0.89, 0.38 + riskScore/130);
+    const svmConf = 0.71;
+
+    const votes = [activeModels.knn&&knnInf, activeModels.gbm&&gbmInf, activeModels.svm&&svmInf].filter(Boolean).length;
+    const totalActive = Object.values(activeModels).filter(Boolean).length;
+    const finalInfected = totalActive > 0 && votes > totalActive/2;
+
+    const confPct = Math.round(Math.min(96, 30 + riskScore*0.68));
+
+    // Verdict
+    const pill = document.getElementById('verdict-pill');
+    const vtext = document.getElementById('verdict-text');
+    pill.className = 'verdict-pill ' + (finalInfected ? 'infected' : 'healthy');
+    vtext.textContent = finalInfected ? 'BLB Detected' : 'No BLB — Healthy Leaf';
+    document.getElementById('verdict-time').textContent = new Date().toLocaleTimeString();
+
+    // Confidence
+    const fill = document.getElementById('conf-fill');
+    fill.style.background = finalInfected ? 'var(--red)' : 'var(--green)';
+    fill.style.width = '0%';
+    setTimeout(()=>{ fill.style.width = confPct+'%'; }, 80);
+    const confEl = document.getElementById('conf-pct');
+    confEl.textContent = confPct+'%';
+    confEl.style.color = finalInfected ? 'var(--red)' : 'var(--green)';
+
+    // Per-model
+    function setModel(pfx, conf, infected, active){
+      const pct = active ? Math.round(conf*100)+'%' : 'OFF';
+      document.getElementById(pfx+'-pct').textContent = pct;
+      const vel = document.getElementById(pfx+'-v');
+      if(!active){ vel.className='model-verdict'; vel.textContent='—'; vel.style.background='none'; return; }
+      vel.className = 'model-verdict ' + (infected?'mv-infected':'mv-healthy');
+      vel.textContent = infected ? 'BLB' : 'Healthy';
+    }
+    setModel('knn', knnConf, knnInf, activeModels.knn);
+    setModel('gbm', gbmConf, gbmInf, activeModels.gbm);
+    setModel('svm', svmConf, svmInf, activeModels.svm);
+
+    // Feature importance bars
+    setTimeout(()=>{
+      document.getElementById('imp-green').style.width='82%';
+      document.getElementById('imp-other').style.width='66%';
+      document.getElementById('imp-age').style.width='37%';
+    }, 200);
+
+    // Chips
+    document.getElementById('chips-wrap').innerHTML = [
+      ['green%', green.toFixed(1)+'%'],
+      ['other%', other.toFixed(1)+'%'],
+      ['age', age+'d'],
+      ['stage', stage],
+      ['res', height+'×'+width],
+      ['risk', riskScore.toFixed(1)],
+    ].map(([k,v])=>`<span class="chip"><span class="ck">${k} </span><span class="cv">${v}</span></span>`).join('');
+
+    // Recommendation
+    const rec = document.getElementById('rec-box');
+    if(finalInfected){
+      rec.innerHTML = `<strong>⚠ Action Required:</strong> BLB infection likely. Apply copper-based bactericide promptly. Improve field drainage to reduce leaf wetness. Remove heavily infected plant material and destroy off-site. Scout neighbouring plots immediately. Consider resistant varieties (IR64, IRBB lines) for the next season.`;
+    } else {
+      rec.innerHTML = `<strong>✓ Field Looks Clear.</strong> No BLB signal detected. Continue monitoring every 5–7 days, especially during humid weather. Avoid excess nitrogen fertilisation — it increases BLB susceptibility. Keep irrigation channels clear to prevent waterlogging.`;
+    }
+  }, 2000);
+}
+
+/* enter key */
+document.addEventListener('keydown', e=>{
+  if(e.key==='Enter' && !document.getElementById('auth-overlay').classList.contains('open')) runPrediction();
+});
+
+/* nav active link on scroll */
+const sections = ['how','predictor','models','about'];
+window.addEventListener('scroll', ()=>{
+  const y = window.scrollY + 80;
+  let active = '';
+  sections.forEach(id=>{
+    const el = document.getElementById(id);
+    if(el && el.offsetTop <= y) active = id;
+  });
+  document.querySelectorAll('.nav-links a').forEach(a=>{
+    const href = a.getAttribute('href').replace('#','');
+    a.classList.toggle('active', href === active || (active==='' && href===''));
+  });
+});
+
+/* ═══════════════════════════════════════════════
+   AUTH SYSTEM
+═══════════════════════════════════════════════ */
+
+// Simple in-memory user store (demo — not real authentication)
+const USERS_KEY = 'riceguard_users';
+const SESSION_KEY = 'riceguard_session';
+
+function getUsers(){
+  try{ return JSON.parse(localStorage.getItem(USERS_KEY)||'[]'); }
+  catch(e){ return []; }
+}
+function saveUsers(u){ localStorage.setItem(USERS_KEY, JSON.stringify(u)); }
+function getSession(){
+  try{ return JSON.parse(localStorage.getItem(SESSION_KEY)||'null'); }
+  catch(e){ return null; }
+}
+function saveSession(s){ localStorage.setItem(SESSION_KEY, JSON.stringify(s)); }
+function clearSession(){ localStorage.removeItem(SESSION_KEY); }
+
+// ── UI State ──
+function applyAuthState(){
+  const session = getSession();
+  const out = document.getElementById('nav-auth-out');
+  const inn = document.getElementById('nav-auth-in');
+  const locked = document.getElementById('predictor-locked');
+  const content = document.getElementById('predictor-content');
+  if(session){
+    out.style.display='none';
+    inn.style.display='block';
+    // populate avatar & name
+    const initials = (session.fname[0]+(session.lname[0]||'')).toUpperCase();
+    document.getElementById('nav-avatar').textContent = initials;
+    document.getElementById('nav-username').textContent = session.fname;
+    document.getElementById('dd-email').textContent = session.email;
+    // unlock predictor
+    locked.style.display='none';
+    content.style.display='block';
+  } else {
+    out.style.display='block';
+    inn.style.display='none';
+    // lock predictor
+    locked.style.display='block';
+    content.style.display='none';
+  }
+}
+
+// ── Modal ──
+function openAuth(tab){
+  document.getElementById('auth-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+  if(tab) switchTab(tab);
+}
+function closeAuth(){
+  document.getElementById('auth-overlay').classList.remove('open');
+  document.body.style.overflow='';
+  // clear errors
+  ['login-error','login-success','reg-error','reg-success'].forEach(id=>{
+    document.getElementById(id).classList.remove('show');
+  });
+}
+function overlayClick(e){
+  if(e.target === document.getElementById('auth-overlay')) closeAuth();
+}
+
+// ── Tab ──
+function switchTab(tab){
+  document.querySelectorAll('.auth-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.auth-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('panel-'+tab).classList.add('active');
+  if(tab==='login'){
+    document.getElementById('auth-modal-title').textContent='Welcome back';
+    document.getElementById('auth-modal-sub').textContent='Sign in to your research account';
+  } else {
+    document.getElementById('auth-modal-title').textContent='Create account';
+    document.getElementById('auth-modal-sub').textContent='Join the RiceGuard research platform';
+  }
+}
+
+// ── Login ──
+function doLogin(){
+  const email = document.getElementById('login-email').value.trim().toLowerCase();
+  const pass = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-error');
+  const okEl = document.getElementById('login-success');
+  errEl.classList.remove('show'); okEl.classList.remove('show');
+
+  if(!email || !pass){ errEl.textContent='Please enter your email and password.'; errEl.classList.add('show'); return; }
+
+  const users = getUsers();
+  const user = users.find(u=>u.email===email && u.pass===btoa(pass));
+  if(!user){ errEl.textContent='No account found with those credentials.'; errEl.classList.add('show'); return; }
+
+  saveSession({email:user.email, fname:user.fname, lname:user.lname});
+  okEl.classList.add('show');
+  setTimeout(()=>{
+    closeAuth();
+    applyAuthState();
+    showToast('🌾','Signed in as '+user.fname+'. Welcome back!');
+  }, 800);
+}
+
+// ── Register ──
+function doRegister(){
+  const fname = document.getElementById('reg-fname').value.trim();
+  const lname = document.getElementById('reg-lname').value.trim();
+  const email = document.getElementById('reg-email').value.trim().toLowerCase();
+  const pass  = document.getElementById('reg-pass').value;
+  const errEl = document.getElementById('reg-error');
+  const okEl  = document.getElementById('reg-success');
+  errEl.classList.remove('show'); okEl.classList.remove('show');
+
+  if(!fname||!email||!pass){ errEl.textContent='Please fill in all required fields.'; errEl.classList.add('show'); return; }
+  if(pass.length < 8){ errEl.textContent='Password must be at least 8 characters.'; errEl.classList.add('show'); return; }
+  if(!email.includes('@')){ errEl.textContent='Please enter a valid email address.'; errEl.classList.add('show'); return; }
+
+  const users = getUsers();
+  if(users.find(u=>u.email===email)){ errEl.textContent='An account with this email already exists.'; errEl.classList.add('show'); return; }
+
+  users.push({fname, lname:lname||'', email, pass:btoa(pass)});
+  saveUsers(users);
+  saveSession({email, fname, lname:lname||''});
+  okEl.classList.add('show');
+  setTimeout(()=>{
+    closeAuth();
+    applyAuthState();
+    showToast('✅','Account created! Welcome to RiceGuard, '+fname+'!');
+  }, 800);
+}
+
+// ── Social (demo) ──
+function socialLogin(provider){
+  // Simulate a social login with a demo account
+  const demoUser = {email:'researcher@demo.com', fname:provider, lname:'User'};
+  saveSession(demoUser);
+  closeAuth();
+  applyAuthState();
+  showToast('🌐','Signed in via '+provider+'. Welcome!');
+}
+
+// ── Logout ──
+function doLogout(){
+  clearSession();
+  closeUserMenu();
+  applyAuthState();
+  showToast('↩','Signed out successfully. See you soon!');
+}
+
+// ── User Menu ──
+function toggleUserMenu(){
+  document.getElementById('user-menu-wrap').classList.toggle('open');
+}
+function closeUserMenu(){
+  document.getElementById('user-menu-wrap').classList.remove('open');
+}
+function closeMenuGo(hash){
+  closeUserMenu();
+  const el = document.querySelector(hash);
+  if(el) el.scrollIntoView({behavior:'smooth'});
+}
+// close dropdown on outside click
+document.addEventListener('click', e=>{
+  const wrap = document.getElementById('user-menu-wrap');
+  if(wrap && !wrap.contains(e.target)) closeUserMenu();
+});
+
+// ── Toast ──
+let toastTimer;
+function showToast(icon, msg){
+  const t = document.getElementById('toast');
+  document.getElementById('toast-icon').textContent = icon;
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 3500);
+}
+
+// ── Init ──
+applyAuthState();
+
+function heroDetect(e){
+  if(!getSession()){
+    e.preventDefault();
+    openAuth('login');
+    showToast('🔒','Please sign in to use the detection tool.');
+  }
+}
+</script>
+</body>
+</html>
